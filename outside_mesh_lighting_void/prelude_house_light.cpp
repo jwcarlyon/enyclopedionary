@@ -88,7 +88,7 @@ int main()
   //scene
   Shader lamp_shader("lamp_loading.vs", "lamp_loading.fs");//ourShader0
   Shader object_shader("object_loading.vs", "object_loading.fs");//ourShader1
-  Model prelude_model(fs::u8path("house/Old_American_House.obj"));//ourModel0
+  Model prelude_model(fs::u8path("prelude_1997/Honda_Prelude_(Mk5)_(BB5)_1997.obj"));//ourModel0
   Model bulb_model(fs::u8path("bulb.obj"));//ourModel1
   Shader& lamp_shader_ref = lamp_shader,
           object_shader_ref = object_shader;
@@ -130,9 +130,12 @@ int main()
     object_shader_update(projection_m4, view_m4, light_source_vec3_ref, object_shader_ref);
     for(int i = 0; i < num_of_dummies; i++)
     {
-      model_m4 = glm::translate(glm::mat4(1.0f), center_pos_vec3);
+			float theta = -(3.14159f / 2);
+			model_m4 = glm::translate(glm::mat4(1.0f), center_pos_vec3);
+      // model_m4 = glm::rotate(model_m4,  theta, glm::vec3(1.0f, 0.0f, 0.0f));
       model_m4 = glm::translate(model_m4, dummy_position_vec3_vector[i]);
-      model_m4 = glm::scale(model_m4, glm::vec3(0.0125));
+			model_m4 = glm::scale(model_m4, glm::vec3(0.00125));
+      // model_m4 = glm::scale(model_m4, glm::vec3(0.25));
       object_shader.setMat4("model", model_m4);
       prelude_model.Draw(object_shader);
     }
