@@ -39,7 +39,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 void advance_time_in_fixed_timestep();
-void object_shader_update(glm::mat4 projection_m4, glm::mat4 view_m4, glm::vec3& light_source_vec3_ref, Shader& object_shader_ref);
+void object_shaderPrelude_update(glm::mat4 projection_m4, glm::mat4 view_m4, glm::vec3& light_source_vec3_ref, Shader& object_shader_ref);
+void object_shaderHouse_update(glm::mat4 projection_m4, glm::mat4 view_m4, glm::vec3& light_source_vec3_ref, Shader& object_shader_ref);
 void lamp_shader_update(glm::mat4 projection_m4, glm::mat4 view_m4, glm::vec3 lamp_start_position_vec3, glm::vec3 center_pos_vec3, float& radial_position_fl_ref, glm::vec3& light_source_vec3_ref, Shader& lamp_shader_ref);
 glm::vec3 updated_orbit_path_vec3(glm::vec3 center_pos_vec3, glm::vec3 planet_pos_vec3, float& radial_position_fl_ref);
 
@@ -87,8 +88,9 @@ int main()
 
   //scene
   Shader lamp_shader("lamp_loading.vs", "lamp_loading.fs");//ourShader0
-  Shader object_shader("object_loading.vs", "object_loading.fs");//ourShader1
-  Model prelude_model(fs::u8path("prelude_1997/Honda_Prelude_(Mk5)_(BB5)_1997.obj"));//ourModel0
+  Shader object_shader("model_loading.vs", "model_loading.fs");//ourShader1
+	Model prelude_model(fs::u8path("prelude_1997/Honda_Prelude_(Mk5)_(BB5)_1997.obj"));//ourModel0
+  Model house_model(fs::u8path("house/Old_American_House.obj"));//ourModel0
   Model bulb_model(fs::u8path("bulb.obj"));//ourModel1
   Shader& lamp_shader_ref = lamp_shader,
           object_shader_ref = object_shader;
@@ -123,14 +125,19 @@ int main()
     projection_m4 = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     view_m4 = camera.GetViewMatrix();
 
-    lamp_shader_update(projection_m4, view_m4, lamp_start_position_vec3,
-      dummy_position_vec3_vector[0], radial_position_fl_ref, light_source_vec3_ref, lamp_shader_ref);
+    lamp_shader_update(
+			projection_m4,
+			view_m4,
+			lamp_start_position_vec3,
+      dummy_position_vec3_vector[0],
+			radial_position_fl_ref,
+			light_source_vec3_ref,
+			lamp_shader_ref);
     bulb_model.Draw(lamp_shader);
 
-    object_shader_update(projection_m4, view_m4, light_source_vec3_ref, object_shader_ref);
+    object_shaderPrelude_update(projection_m4, view_m4, light_source_vec3_ref, object_shader_ref);
     for(int i = 0; i < num_of_dummies; i++)
     {
-			float theta = -(3.14159f / 2);
 			model_m4 = glm::translate(glm::mat4(1.0f), center_pos_vec3);
       // model_m4 = glm::rotate(model_m4,  theta, glm::vec3(1.0f, 0.0f, 0.0f));
       model_m4 = glm::translate(model_m4, dummy_position_vec3_vector[i]);
@@ -139,6 +146,13 @@ int main()
       object_shader.setMat4("model", model_m4);
       prelude_model.Draw(object_shader);
     }
+
+		object_shaderHouse_update(projection_m4, view_m4, light_source_vec3_ref, object_shader_ref);
+		model_m4 = glm::translate(glm::mat4(1.0f), center_pos_vec3);
+		model_m4 = glm::scale(model_m4, glm::vec3(0.125));
+		model_m4 = glm::rotate(model_m4,  -(3.14159f / 2), glm::vec3(1.0f, 0.0f, 0.0f));
+		object_shader.setMat4("model", model_m4);
+		house_model.Draw(object_shader);
 
     advance_time_in_fixed_timestep();
 
@@ -176,16 +190,30 @@ void advance_time_in_fixed_timestep()
   next_render_clock += Framerate{1}; //this is a singleton window value
 }
 
-void object_shader_update(glm::mat4 projection_m4, glm::mat4 view_m4, glm::vec3& light_source_vec3_ref, Shader& object_shader_ref)
+void object_shaderPrelude_update(glm::mat4 projection_m4, glm::mat4 view_m4, glm::vec3& light_source_vec3_ref, Shader& object_shader_ref)
 {//this function updates an obect shader's matricies and vectors
   glm::vec3 light_color_vec3(1.0f, 1.0f, 1.0f);
-  glm::vec3 object_color_vec3(1.0f, 0.5f, 0.31f);//orange
+  //glm::vec3 object_color_vec3(1.0f, 0.5f, 0.31f);//orange
 
   object_shader_ref.use();
   object_shader_ref.setVec3("lightColor", light_color_vec3);
   object_shader_ref.setVec3("lightPos", light_source_vec3_ref);//used to calculate viewspace for reflection
   object_shader_ref.setVec3("viewerPos", glm::vec3(0.0f));// camera.Position);
-  object_shader_ref.setVec3("objectColor", object_color_vec3);//lightPos
+  //object_shader_ref.setVec3("objectColor", object_color_vec3);//lightPos
+  object_shader_ref.setMat4("projection", projection_m4);
+  object_shader_ref.setMat4("view", view_m4);
+}
+
+void object_shaderHouse_update(glm::mat4 projection_m4, glm::mat4 view_m4, glm::vec3& light_source_vec3_ref, Shader& object_shader_ref)
+{//this function updates an obect shader's matricies and vectors
+  glm::vec3 light_color_vec3(1.0f, 1.0f, 1.0f);
+  //glm::vec3 object_color_vec3(1.0f, 0.5f, 0.31f);//orange
+
+  object_shader_ref.use();
+  object_shader_ref.setVec3("lightColor", light_color_vec3);
+  object_shader_ref.setVec3("lightPos", light_source_vec3_ref);//used to calculate viewspace for reflection
+  object_shader_ref.setVec3("viewerPos", glm::vec3(0.0f));// camera.Position);
+  //object_shader_ref.setVec3("objectColor", object_color_vec3);//lightPos
   object_shader_ref.setMat4("projection", projection_m4);
   object_shader_ref.setMat4("view", view_m4);
 }
